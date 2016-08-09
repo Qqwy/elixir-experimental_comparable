@@ -17,7 +17,7 @@ defmodule Foo do
       0
     end
 
-    def compare(%Bar{number: number}, %Foo{int: int}) do
+    def compare(%Bar{}, %Foo{}) do
       1
     end
   end
