@@ -9,14 +9,22 @@ defmodule Foo do
   # end
   import Comparable
   defcomparable_for Bar, Foo do
-    def compare(bar, foo) do
-      bar.number - foo.int
+    def compare(%Bar{number: number}, %Foo{int: int}) when number < int do
+      -1
+    end
+
+    def compare(%Bar{number: number}, %Foo{int: int}) when number == int do
+      0
+    end
+
+    def compare(%Bar{number: number}, %Foo{int: int}) do
+      1
     end
   end
 
   defcomparable_for Foo, Foo do
-    def compare(foo1, foo2) do
-      foo1.int - foo2.int
-    end
+    def compare(%Foo{int: int1}, %Foo{int: int2}) when int1 < int2, do: -1
+    def compare(%Foo{int: int1}, %Foo{int: int2}) when int1 > int2, do: 1
+    def compare(%Foo{int: _int1}, %Foo{int: _int2}), do: 0
   end
 end

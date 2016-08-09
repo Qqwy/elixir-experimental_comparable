@@ -6,6 +6,7 @@ defmodule Comparable do
   end
 
   def compare(a = %type_a{}, b = %type_b{}) when type_a <= type_b do
+    Elixir.Protocol.assert_impl!(Comparable.Protocol, Module.concat(type_a, type_b))
     Comparable.Protocol.compare(%{__struct__: Module.concat(type_a, type_b)}, a, b)
   end
 
@@ -14,24 +15,26 @@ defmodule Comparable do
   end
 
   defmacro defcomparable_for(module_a, module_b, keywords) do
-    quote do
+    protocol_impl = 
+      quote do
+        defimpl Comparable.Protocol, for: Module.concat(unquote(module_a), unquote(module_b)) do
+          def compare(_types, a, b) do
+            Module.concat(Comparable.ProtocolImpl, Module.concat(unquote(module_a), unquote(module_b))).compare(a, b)
+          end
+        end
+      end
+
+    quote generated: true do
       case {unquote(module_a), unquote(module_b)} do
         {type_a, type_b} when is_atom(type_a) and is_atom(type_b) and type_a <= type_b ->
-          fake_struct_name = Module.concat(type_a, type_b)
-          implname = Module.concat(Comparable.ProtocolImpl, fake_struct_name)
+          implname = Module.concat(Comparable.ProtocolImpl, Module.concat(type_a, type_b))
           
           defmodule implname do
             unquote(keywords[:do])
           end
 
-          # TODO: Find out if this is possible without nested eval_quoted
-          quote do
-            defimpl Comparable.Protocol, for: unquote(fake_struct_name) do
-              def compare(_types, a, b) do
-                unquote(implname).compare(a, b)
-              end
-            end
-          end |> Code.eval_quoted
+          unquote(protocol_impl)
+
         {type_a, type_b} when is_atom(type_a) and is_atom(type_b) ->
           raise "defcomparable_for called with types in non-alphabetical order `#{type_a}, #{type_b}`! Use `defcomparable_for #{type_b}, #{type_a}, do: ` instead"
         _ -> 
