@@ -1,12 +1,6 @@
 defmodule Foo do
   defstruct int: 0
 
-  # defimpl Comparable.Protocol, for: Bar.Foo do
-  #   def compare(_, bar, foo) do
-  #     IO.inspect([bar, foo])
-  #     bar.number - foo.int
-  #   end
-  # end
   import Comparable
   defcomparable_for Bar, Foo do
     def compare(%Bar{number: number}, %Foo{int: int}) when number < int do

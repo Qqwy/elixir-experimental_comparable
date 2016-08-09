@@ -19,13 +19,12 @@ defmodule Comparable do
 
   # Comparing two custom structs 
   def compare(a = %type_a{}, b = %type_b{}) when type_a <= type_b do
-    Elixir.Protocol.assert_impl!(Comparable.Protocol, Module.concat(type_a, type_b))
-    Comparable.Protocol.compare(%{__struct__: Module.concat(type_a, type_b)}, a, b)
+    impl_module(type_a, type_b).compare(a, b)
   end
 
   # Comparing two custom structs in non-alphabetical order  
   def compare(a = %type_a{}, b = %type_b{}) do
-    Comparable.Protocol.compare(%{__struct__: Module.concat(type_b, type_a)}, b, a) * -1
+    impl_module(type_b, type_a).compare(b, a) * -1
   end
 
   # Integers and Floats can be compared directly with eachother.
@@ -54,19 +53,19 @@ defmodule Comparable do
     def compare(a, b) when unquote(guard)(a) and unquote(guard)(b)          , do:  0
 
     def compare(a, b = %type_b{}) when unquote(guard)(a) and unquote(builtin_type) <= type_b do
-      Comparable.Protocol.compare(%{__struct__: Module.concat(unquote(builtin_type), type_b)}, a, b)
+      impl_module(unquote(builtin_type), type_b).compare(a, b)
     end
 
     def compare(a, b = %type_b{}) when unquote(guard)(a) do
-      Comparable.Protocol.compare(%{__struct__: Module.concat(type_b, unquote(builtin_type))}, b, a) * -1
+      impl_module(type_b, unquote(builtin_type)).compare(b, a) * -1
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) and unquote(builtin_type) <= type_a do
-      Comparable.Protocol.compare(%{__struct__: Module.concat(unquote(builtin_type), type_a)}, b, a) 
+      impl_module(unquote(builtin_type), type_a).compare(b, a) 
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) do
-      Comparable.Protocol.compare(%{__struct__: Module.concat(type_a, unquote(builtin_type))}, a, b) * -1
+      impl_module(type_a, unquote(builtin_type)).compare(a, b) * -1
     end
   end
 
@@ -98,14 +97,14 @@ defmodule Comparable do
   defmacro defcomparable_for(module_a, module_b, keywords) do
 
     # The generic protocol implementation, which dispatches to the actual implementation
-    protocol_impl = 
-      quote do
-        defimpl Comparable.Protocol, for: Module.concat(unquote(module_a), unquote(module_b)) do
-          def compare(_types, a, b) do
-            Module.concat(Comparable.ProtocolImpl, Module.concat(unquote(module_a), unquote(module_b))).compare(a, b)
-          end
-        end
-      end
+    # protocol_impl = 
+    #   quote do
+    #     defimpl Comparable.Protocol, for: Module.concat(unquote(module_a), unquote(module_b)) do
+    #       def compare(_types, a, b) do
+    #         Module.concat(Comparable.ProtocolImpl, Module.concat(unquote(module_a), unquote(module_b))).compare(a, b)
+    #       end
+    #     end
+    #   end
 
     quote generated: true do
       case {unquote(module_a), unquote(module_b)} do
@@ -117,7 +116,7 @@ defmodule Comparable do
             unquote(keywords[:do])
           end
 
-          unquote(protocol_impl)
+          #unquote(protocol_impl)
 
         {type_a, type_b} when is_atom(type_a) and is_atom(type_b) ->
           raise "defcomparable_for called with types in non-alphabetical order `#{inspect type_a}, #{inspect type_b}`! Use `defcomparable_for #{inspect type_b}, #{inspect type_a} do ... end ` instead."
@@ -125,10 +124,9 @@ defmodule Comparable do
     end
   end
 
+  defp impl_module(type_a, type_b) do
+     Module.concat(Comparable.ProtocolImpl, Module.concat(type_a, type_b))
+  end
+
 
 end
-
-
-# defimpl_comparison Bar, Foo do
-
-# end
