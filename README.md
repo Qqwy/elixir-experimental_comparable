@@ -1,24 +1,3 @@
 # Comparable
 
-**TODO: Add description**
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
-
-  1. Add `comparable` to your list of dependencies in `mix.exs`:
-
-    ```elixir
-    def deps do
-      [{:comparable, "~> 0.1.0"}]
-    end
-    ```
-
-  2. Ensure `comparable` is started before your application:
-
-    ```elixir
-    def application do
-      [applications: [:comparable]]
-    end
-    ```
-
+An experimental implementation of my vision of a possible [Comparable protocol/interface](https://groups.google.com/forum/#!topic/elixir-lang-core/eE_mMWKdVYY) for the programming language Elixir.
