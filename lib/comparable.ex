@@ -19,12 +19,12 @@ defmodule Comparable do
 
   # Comparing two custom structs 
   def compare(a = %type_a{}, b = %type_b{}) when type_a <= type_b do
-    impl_module(type_a, type_b).compare(a, b)
+    impl_module!(type_a, type_b).compare(a, b)
   end
 
   # Comparing two custom structs in non-alphabetical order  
   def compare(a = %type_a{}, b = %type_b{}) do
-    impl_module(type_b, type_a).compare(b, a) * -1
+    impl_module!(type_b, type_a).compare(b, a) * -1
   end
 
   # Integers and Floats can be compared directly with eachother.
@@ -36,6 +36,8 @@ defmodule Comparable do
   builtin_types = 
     [
       is_tuple: Tuple,
+      is_integer: Integer,
+      is_float: Float,
       is_atom: Atom,
       is_list: List,
       is_map: Map,
@@ -53,19 +55,19 @@ defmodule Comparable do
     def compare(a, b) when unquote(guard)(a) and unquote(guard)(b)          , do:  0
 
     def compare(a, b = %type_b{}) when unquote(guard)(a) and unquote(builtin_type) <= type_b do
-      impl_module(unquote(builtin_type), type_b).compare(a, b)
+      impl_module!(unquote(builtin_type), type_b).compare(a, b)
     end
 
     def compare(a, b = %type_b{}) when unquote(guard)(a) do
-      impl_module(type_b, unquote(builtin_type)).compare(b, a) * -1
+      impl_module!(type_b, unquote(builtin_type)).compare(b, a) * -1
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) and unquote(builtin_type) <= type_a do
-      impl_module(unquote(builtin_type), type_a).compare(b, a) 
+      impl_module!(unquote(builtin_type), type_a).compare(b, a) 
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) do
-      impl_module(type_a, unquote(builtin_type)).compare(a, b) * -1
+      impl_module!(type_a, unquote(builtin_type)).compare(a, b) * -1
     end
   end
 
@@ -88,35 +90,21 @@ defmodule Comparable do
     Enum.sort(collection_of_comparable_items, &(gt?(&1, &2)))
   end
 
-
-  defprotocol Protocol do
-    @doc false
-    def compare(fake_types_struct, a, b)
-  end
-
   defmacro defcomparable_for(module_a, module_b, keywords) do
-
-    # The generic protocol implementation, which dispatches to the actual implementation
-    # protocol_impl = 
-    #   quote do
-    #     defimpl Comparable.Protocol, for: Module.concat(unquote(module_a), unquote(module_b)) do
-    #       def compare(_types, a, b) do
-    #         Module.concat(Comparable.ProtocolImpl, Module.concat(unquote(module_a), unquote(module_b))).compare(a, b)
-    #       end
-    #     end
-    #   end
 
     quote generated: true do
       case {unquote(module_a), unquote(module_b)} do
         {type_a, type_b} when is_atom(type_a) and is_atom(type_b) and type_a <= type_b ->
   
-          # The actual custom implementation is specified here.          
-          implname = Module.concat(Comparable.ProtocolImpl, Module.concat(type_a, type_b))
-          defmodule implname do
+          # The custom implementation is specified here.
+          impl_name = Module.concat(type_a, type_b)
+          impl_module = Module.concat(Comparable.ProtocolImpl, impl_name)
+          defmodule impl_module do
             unquote(keywords[:do])
-          end
+            @impl_name impl_name
 
-          #unquote(protocol_impl)
+            def __comparable__, do: @impl_name
+          end
 
         {type_a, type_b} when is_atom(type_a) and is_atom(type_b) ->
           raise "defcomparable_for called with types in non-alphabetical order `#{inspect type_a}, #{inspect type_b}`! Use `defcomparable_for #{inspect type_b}, #{inspect type_a} do ... end ` instead."
@@ -124,8 +112,38 @@ defmodule Comparable do
     end
   end
 
+  defp impl_module!(type_a, type_b) do
+    impl = impl_module(type_a, type_b)
+    name = impl_name(type_a, type_b)
+
+    case Code.ensure_compiled(impl) do
+      {:module, ^impl} -> :ok
+      _ -> raise ArgumentError,
+             "#{inspect impl} is not available."
+    end
+
+    try do
+      impl.__comparable__
+    rescue
+      UndefinedFunctionError ->
+        raise ArgumentError,
+          "#{inspect impl} is not an implementation of defcomparable_for"
+    else
+      ^name ->
+        :ok
+      other ->
+        raise ArgumentError,
+          "expected #{inspect impl} to be an implementation of #{type_a}, #{type_b}, got: #{inspect other}"
+    end
+    impl
+  end
+
   defp impl_module(type_a, type_b) do
-     Module.concat(Comparable.ProtocolImpl, Module.concat(type_a, type_b))
+     Module.concat(Comparable.ProtocolImpl, impl_name(type_a, type_b))
+  end
+
+  defp impl_name(type_a, type_b) do
+    Module.concat(type_a, type_b)
   end
 
 
