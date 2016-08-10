@@ -6,7 +6,7 @@ defmodule Foo do
   defstruct int: 0
 
   import Comparable
-  defcomparable Bar, Foo do
+  defcomparison(Bar, Foo) do
     def compare(%Bar{num: num}, %Foo{int: int}) when num < int do
       -1
     end
@@ -20,7 +20,7 @@ defmodule Foo do
     end
   end
 
-  defcomparable Foo, Foo do
+  defcomparison(Foo, Foo) do
     def compare(%Foo{int: int1}, %Foo{int: int2}) when int1 < int2, do: -1
     def compare(%Foo{int: int1}, %Foo{int: int2}) when int1 > int2, do: 1
     def compare(%Foo{int: _int1}, %Foo{int: _int2}), do: 0

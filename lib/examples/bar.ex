@@ -7,7 +7,7 @@ defmodule Bar do
 
   import Comparable
 
-  defcomparable Bar, Integer do
+  defcomparison(Bar, Integer) do
     def compare(%Bar{num: num}, int) when num < int, do: -1
     def compare(%Bar{num: num}, int) when num > int, do:  1
     def compare(%Bar{}, _int)                      , do:  0

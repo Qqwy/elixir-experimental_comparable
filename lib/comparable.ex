@@ -8,11 +8,11 @@ defmodule Comparable do
   - allow comparisons between integers and floats.
 
   To make your own structs comparable to one of the builtin types, or to each other,
-  you can define `defcomparable/3` for the type-combination that is to be comparable.
+  you can define `defcomparison/3` for the type-combination that is to be comparable.
 
   Because when you compare two elements `a` and `b`, the result is exactly the opposite 
   of the result of comparing them the other way around,
-  only a single implementation of `defcomparable` is necessary.
+  only a single implementation of `defcomparison` is necessary.
 
   The choice has been made to always define these comparable implementations in alphabetic
   order; the type with the lowest alphabetic order is mentioned first.
@@ -22,14 +22,14 @@ defmodule Comparable do
 
   In this example, a module is made to represent roman numerals.
   We want to allow comparisons between normal integers and these roman numerals,
-  so we define how this should happen using `defcomparable`.
+  so we define how this should happen using `defcomparison`.
   
       defmodule RomanNumeral do
         defstruct [:num]
 
         import Comparable
         
-        defcomparable Integer, RomanNumeral do
+        defcomparison(Integer, RomanNumeral) do
           def compare(int, %RomanNumeral{num: num}) when num < int, do: -1
           def compare(int, %RomanNumeral{num: num}) when num > int, do:  1
           def compare(int, %RomanNumeral{})                       , do:  0
@@ -38,9 +38,9 @@ defmodule Comparable do
 
   Observe:
 
-  - Integer is used as first type in the `defcomparable` statement, 
+  - Integer is used as first type in the `defcomparison` statement, 
     as `Integer` is earlier than `RomanNumeral`, alphabetically speaking.
-  - Inside the `defcomparable` implementation, we can define any (helper) functions we want; 
+  - Inside the `defcomparison` implementation, we can define any (helper) functions we want; 
     the `compare/2` function is the one that needs to be defined in order for the comparison to work.
 
   We can now do:
@@ -53,11 +53,11 @@ defmodule Comparable do
       iex> Comparable.compare(num, 3)
       0
 
-  For type-combinations for which there does not exist a `defcomparable` implementation, an Comparable.UncomparableError is raised:
+  For type-combinations for which there does not exist a `defcomparison` implementation, an Comparable.UncomparableError is raised:
 
       iex> Comparable.compare(num, "foo")
       ** (Comparable.UncomparableError) Could not compare `BitString` with `RomanNumeral`,
-      because no proper `defcomparable BitString, RomanNumeral do ... end` could be found.
+      because no proper `defcomparison BitString, RomanNumeral do ... end` could be found.
       
   """
 
@@ -68,7 +68,7 @@ defmodule Comparable do
       [first_type, second_type] = :lists.sort([type_a, type_b])
       msg = """
       Could not compare `#{inspect type_a}` with `#{inspect type_b}`,
-      because no proper `defcomparable #{inspect first_type}, #{inspect second_type} do ... end` could be found.
+      because no proper `defcomparison #{inspect first_type}, #{inspect second_type} do ... end` could be found.
       """
       %UncomparableError{message: msg}
     end
@@ -78,8 +78,8 @@ defmodule Comparable do
   @doc """
   Compares one thing to another.
 
-  Works for all type-combinations that have a `defcomparable` implementation.
-  (See `defcomparable/3` for more details)
+  Works for all type-combinations that have a `defcomparison` implementation.
+  (See `defcomparison/3` for more details)
 
   Returns:
   - -1 if `a` is smaller than `b`
@@ -197,7 +197,7 @@ defmodule Comparable do
   @doc """
   Defines an implementation for the given Comparables, `module_a` and `module_b`.
 
-  The two types passed to `defcomparable/3` should be in alphabetical order; if this is not
+  The two types passed to `defcomparison/3` should be in alphabetical order; if this is not
   the case, an error will be raised at compile-time.
 
   The `type_a` and `type_b` can each be any atom representing a built-in Elixir type:
@@ -219,7 +219,7 @@ defmodule Comparable do
 
   Note that, unlike Protocol implementations, it is not possible to derive implementations.
 
-  `defcomparable/3` should be called with a block containing an implementation
+  `defcomparison/3` should be called with a block containing an implementation
   of the `compare(a, b)` function.
 
   This `compare(a, b)`-function will always be called with as first parameter a value of type `type_a`,
@@ -228,10 +228,10 @@ defmodule Comparable do
   Inside the implementation, you can refer to the name of the first type with `@comparable_type_a`
   and to the name of the second type with `@comparable_type_b`.
   """
-  @spec defcomparable(atom, atom, [do: any]) :: any
-  defmacro defcomparable(type_a, type_b, do_block)
+  @spec defcomparison(atom, atom, [do: any]) :: any
+  defmacro defcomparison(type_a, type_b, do_block)
 
-  defmacro defcomparable(type_a, type_b, do: block) do
+  defmacro defcomparison(type_a, type_b, do: block) do
 
     quote generated: true do
       case {unquote(type_a), unquote(type_b)} do
@@ -251,7 +251,7 @@ defmodule Comparable do
           end
 
         {type_a, type_b} when is_atom(type_a) and is_atom(type_b) ->
-          raise "defcomparable called with types in non-alphabetical order `#{inspect type_a}, #{inspect type_b}`! Use `defcomparable #{inspect type_b}, #{inspect type_a} do ... end ` instead."
+          raise "defcomparison called with types in non-alphabetical order `#{inspect type_a}, #{inspect type_b}`! Use `defcomparison #{inspect type_b}, #{inspect type_a} do ... end ` instead."
         _ -> raise ArgumentError
       end
     end
