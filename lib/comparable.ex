@@ -82,9 +82,9 @@ defmodule Comparable do
   (See `defcomparison/3` for more details)
 
   Returns:
-  - -1 if `a` is smaller than `b`
-  -  0 if `a` and `b` are the same
-  -  1 if `a` is larger than `b`.
+  - :< if `a` is smaller than `b`
+  - := if `a` and `b` are the same
+  - :> if `a` is larger than `b`.
   """
   @spec compare(any, any) :: :< | := | :>
   def compare(a, b)
@@ -229,6 +229,8 @@ defmodule Comparable do
 
   This `compare(a, b)`-function will always be called with as first parameter a value of type `type_a`,
   and as second parameter a value of type `type_b`.
+
+  `compare(a, b)` should return `:<` if a is smaller than b, `:=` if a and b are equal, and `:>` if a is larger than b.
 
   Inside the implementation, you can refer to the name of the first type with `@comparable_type_a`
   and to the name of the second type with `@comparable_type_b`.
