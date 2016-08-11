@@ -189,6 +189,29 @@ defmodule Comparable do
   def eq?(a, b), do: compare(a, b) == :=
 
   @doc """
+  True if `a` is between `min` and `max`
+  
+  Will only work when `a` is comparable to both `min` and `max`.
+  """
+  @spec between?(any, any, any) ::boolean
+  def between?(a, min, max) do
+    compare(a, min) in [:=, :>] and compare(a, max) in [:<, :=]
+  end
+
+  @doc """
+  True if `a` lies strictly between `min` and `max`.
+
+  Will only work when `a` is comparable to both `min` and `max`.
+
+  In contrast to `between/3`, this will therefore also return false 
+  if `a` is equal to `min` or `a` is equal to `max`.
+  """
+  def strictly_between?(a, min, max) do
+    compare(a, min) == :> and compare(a, max) == :<
+  end
+
+
+  @doc """
   Sorts an Enumerable that only contains items that are comparable to each other.
 
   This function uses the Merge Sort algorithm.
