@@ -30,9 +30,9 @@ defmodule Comparable do
         import Comparable
         
         defcomparison(Integer, RomanNumeral) do
-          def compare(int, %RomanNumeral{num: num}) when num < int, do: -1
-          def compare(int, %RomanNumeral{num: num}) when num > int, do:  1
-          def compare(int, %RomanNumeral{})                       , do:  0
+          def compare(int, %RomanNumeral{num: num}) when num < int, do: :<
+          def compare(int, %RomanNumeral{num: num}) when num > int, do: :>
+          def compare(int, %RomanNumeral{})                       , do: :=
         end
       end
 
