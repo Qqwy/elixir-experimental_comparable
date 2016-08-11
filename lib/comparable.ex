@@ -135,11 +135,11 @@ defmodule Comparable do
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) and unquote(builtin_type) <= type_a do
-      impl_module!(unquote(builtin_type), type_a).compare(b, a) 
+      invert_comparison impl_module!(unquote(builtin_type), type_a).compare(b, a) 
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) do
-      invert_comparison impl_module!(type_a, unquote(builtin_type)).compare(a, b)
+      impl_module!(type_a, unquote(builtin_type)).compare(a, b)
     end
   end
 
