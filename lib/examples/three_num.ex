@@ -15,9 +15,9 @@ defmodule ThreeNum do
   
   defcomparison(ThreeNum, ThreeNum) do
     def compare(a = %ThreeNum{}, b = %ThreeNum{}) do
-      with  0 <- Comparable.compare(a.x, b.x),
-            0 <- Comparable.compare(a.y, b.y),
-        do:      Comparable.compare(a.z, b.z)
+      with  := <- Comparable.compare(a.x, b.x),
+            := <- Comparable.compare(a.y, b.y),
+        do:       Comparable.compare(a.z, b.z)
     end
   end
 end

@@ -8,8 +8,8 @@ defmodule Bar do
   import Comparable
 
   defcomparison(Bar, Integer) do
-    def compare(%Bar{num: num}, int) when num < int, do: -1
-    def compare(%Bar{num: num}, int) when num > int, do:  1
-    def compare(%Bar{}, _int)                      , do:  0
+    def compare(%Bar{num: num}, int) when num < int, do: :<
+    def compare(%Bar{num: num}, int) when num > int, do: :>
+    def compare(%Bar{}, _int)                      , do: :=
   end
 end

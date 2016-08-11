@@ -86,7 +86,7 @@ defmodule Comparable do
   -  0 if `a` and `b` are the same
   -  1 if `a` is larger than `b`.
   """
-  @spec compare(any, any) :: -1 | 0 | 1
+  @spec compare(any, any) :: :< | := | :>
   def compare(a, b)
 
   # Comparing two custom structs 
@@ -96,13 +96,13 @@ defmodule Comparable do
 
   # Comparing two custom structs in non-alphabetical order  
   def compare(a = %type_a{}, b = %type_b{}) do
-    impl_module!(type_b, type_a).compare(b, a) * -1
+    invert_comparison impl_module!(type_b, type_a).compare(b, a)
   end
 
   # Integers and Floats can be compared directly with eachother.
-  def compare(a, b) when is_number(a) and is_number(b) and a < b, do: -1
-  def compare(a, b) when is_number(a) and is_number(b) and a > b, do:  1
-  def compare(a, b) when is_number(a) and is_number(b)          , do:  0
+  def compare(a, b) when is_number(a) and is_number(b) and a < b, do: :<
+  def compare(a, b) when is_number(a) and is_number(b) and a > b, do: :>
+  def compare(a, b) when is_number(a) and is_number(b)          , do: :=
 
   # Other built-in types, when compared to something of the same type.
   builtin_types = 
@@ -122,16 +122,16 @@ defmodule Comparable do
 
   for {guard, builtin_type} <- builtin_types do 
 
-    def compare(a, b) when unquote(guard)(a) and unquote(guard)(b) and a < b, do: -1
-    def compare(a, b) when unquote(guard)(a) and unquote(guard)(b) and a > b, do:  1
-    def compare(a, b) when unquote(guard)(a) and unquote(guard)(b)          , do:  0
+    def compare(a, b) when unquote(guard)(a) and unquote(guard)(b) and a < b, do: :<
+    def compare(a, b) when unquote(guard)(a) and unquote(guard)(b) and a > b, do: :>
+    def compare(a, b) when unquote(guard)(a) and unquote(guard)(b)          , do: :=
 
     def compare(a, b = %type_b{}) when unquote(guard)(a) and unquote(builtin_type) <= type_b do
       impl_module!(unquote(builtin_type), type_b).compare(a, b)
     end
 
     def compare(a, b = %type_b{}) when unquote(guard)(a) do
-      impl_module!(type_b, unquote(builtin_type)).compare(b, a) * -1
+      invert_comparison impl_module!(type_b, unquote(builtin_type)).compare(b, a)
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) and unquote(builtin_type) <= type_a do
@@ -139,9 +139,14 @@ defmodule Comparable do
     end
 
     def compare(a = %type_a{}, b) when unquote(guard)(b) do
-      impl_module!(type_a, unquote(builtin_type)).compare(a, b) * -1
+      invert_comparison impl_module!(type_a, unquote(builtin_type)).compare(a, b)
     end
   end
+
+  # Inverts a comparison, so less-than becomes greater-than and vice-versa.
+  defp invert_comparison(:<), do: :>
+  defp invert_comparison(:=), do: :=
+  defp invert_comparison(:>), do: :<
 
   @doc """
   True if `a` is strictly smaller than `b`, 
@@ -149,7 +154,7 @@ defmodule Comparable do
   when compared using the Comparable.compare implementation for (a, b).
   """
   @spec lt?(any, any) :: boolean
-  def lt?(a, b), do: compare(a, b) < 0
+  def lt?(a, b), do: compare(a, b) == :<
 
   @doc """
   True if `a` is smaller than or equal to `b`, 
@@ -157,7 +162,7 @@ defmodule Comparable do
   when `a` and `b` are Comparable to each other.
   """
   @spec lte?(any, any) :: boolean
-  def lte?(a, b), do: compare(a, b) <= 0
+  def lte?(a, b), do: compare(a, b) in [:<, :=]
 
   @doc """
   True if `a` is strictly larger than `b`, 
@@ -165,7 +170,7 @@ defmodule Comparable do
   when `a` and `b` are Comparable to each other.
   """
   @spec gt?(any, any) :: boolean
-  def gt?(a, b), do: compare(a, b) > 0
+  def gt?(a, b), do: compare(a, b) == :>
 
   @doc """
   True if `a` is larger than or equal to `b`, 
@@ -173,7 +178,7 @@ defmodule Comparable do
   when `a` and `b` are Comparable to each other.
   """
   @spec gte?(any, any) :: boolean
-  def gte?(a, b), do: compare(a, b) >= 0
+  def gte?(a, b), do: compare(a, b) in [:=, :>]
 
   @doc """
   True if `a` is equal to `b`, 
@@ -181,7 +186,7 @@ defmodule Comparable do
   when `a` and `b` are Comparable to each other.
   """
   @spec eq?(any, any) :: boolean
-  def eq?(a, b), do: compare(a, b) == 0
+  def eq?(a, b), do: compare(a, b) == :=
 
   @doc """
   Sorts an Enumerable that only contains items that are comparable to each other.
